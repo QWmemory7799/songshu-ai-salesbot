@@ -9,7 +9,9 @@ app.use(express.json({ limit: '5mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Server-side config file (optional, for production)
-const CONFIG_PATH = path.join(__dirname, '.config.json');
+// Vercel: write to /tmp (read-only filesystem otherwise)
+const CONFIG_DIR = process.env.VERCEL ? '/tmp' : __dirname;
+const CONFIG_PATH = path.join(CONFIG_DIR, '.config.json');
 let serverConfig = {};
 try {
   if (fs.existsSync(CONFIG_PATH)) {
@@ -125,3 +127,5 @@ app.listen(PORT, () => {
   console.log(`松鼠管家MVP后端: http://localhost:${PORT}`);
   if (serverConfig.apiKey) console.log('  已配置服务端API密钥');
 });
+
+module.exports = app;
