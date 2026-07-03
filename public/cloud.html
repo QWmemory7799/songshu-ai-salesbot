@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>松鼠管家 · AI苏姐</title>
+<style>
+  :root { --bg:#f0f2f5; --card:#fff; --primary:#2e7d32; --text:#333; --sub:#888; --ai-bg:#e8f5e9; --user-bg:#fff; --danger:#d32f2f; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; background:var(--bg); height:100dvh; display:flex; flex-direction:column; }
+  .header { background:var(--primary); color:#fff; padding:10px 15px; display:flex; align-items:center; gap:10px; position:sticky; top:0; z-index:10; }
+  .header .avatar { width:40px; height:40px; border-radius:50%; background:#fff; color:var(--primary); display:flex; align-items:center; justify-content:center; font-size:20px; font-weight:bold; flex-shrink:0; }
+  .header .name { font-weight:bold; font-size:16px; }
+  .header .sub { font-size:11px; opacity:0.8; }
+  .header .right { margin-left:auto; display:flex; gap:6px; }
+  .header .btn { background:rgba(255,255,255,0.2); border:none; color:#fff; padding:5px 10px; border-radius:15px; font-size:12px; cursor:pointer; }
+  .header .btn.live { background:#ff9800; color:#fff; }
+  .msgs { flex:1; overflow-y:auto; padding:10px; display:flex; flex-direction:column; gap:8px; }
+  .msg { max-width:80%; padding:10px 14px; border-radius:12px; font-size:14px; line-height:1.6; word-break:break-word; animation:fadein .3s; }
+  .msg.ai { align-self:flex-start; background:var(--ai-bg); border-radius:4px 16px 16px 16px; }
+  .msg.user { align-self:flex-end; background:var(--user-bg); border-radius:16px 4px 16px 16px; box-shadow:0 1px 3px rgba(0,0,0,0.08); }
+  .msg .meta { font-size:10px; color:var(--sub); margin-bottom:2px; }
+  .msg .tag { display:inline-block; font-size:10px; padding:1px 6px; border-radius:8px; margin-left:4px; }
+  .tag.intent { background:#ff9800; color:#fff; }
+  .tag.transfer { background:var(--danger); color:#fff; }
+  .quick-section { padding:8px 10px; display:flex; gap:6px; flex-wrap:wrap; border-top:1px solid #e0e0e0; background:#fff; }
+  .quick-btn { background:#f5f5f5; border:1px solid #ddd; padding:6px 14px; border-radius:16px; font-size:13px; cursor:pointer; white-space:nowrap; color:var(--primary); }
+  .quick-btn:active { background:#e8f5e9; }
+  .input-section { padding:8px 10px; background:#fff; border-top:1px solid #e0e0e0; display:flex; gap:8px; }
+  .input-section input { flex:1; border:1px solid #ddd; border-radius:20px; padding:8px 16px; font-size:14px; outline:none; }
+  .input-section input:focus { border-color:var(--primary); }
+  .input-section button { background:var(--primary); color:#fff; border:none; padding:8px 18px; border-radius:20px; font-size:14px; cursor:pointer; }
+  .overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:100; align-items:center; justify-content:center; }
+  .overlay.show { display:flex; }
+  .overlay .panel { background:#fff; border-radius:12px; padding:20px; width:90%; max-width:420px; max-height:85vh; overflow-y:auto; }
+  .overlay h3 { margin-bottom:12px; color:var(--primary); }
+  .overlay label { display:block; font-size:13px; color:var(--sub); margin:8px 0 4px; }
+  .overlay input, .overlay textarea { width:100%; border:1px solid #ddd; border-radius:8px; padding:8px 12px; font-size:13px; }
+  .overlay textarea { min-height:100px; resize:vertical; }
+  .overlay .btn-row { display:flex; gap:8px; margin-top:12px; }
+  .overlay .btn-row button { flex:1; padding:10px; border:none; border-radius:8px; font-size:14px; cursor:pointer; }
+  .btn-save { background:var(--primary); color:#fff; }
+  .btn-close { background:#f5f5f5; color:var(--text); }
+  .status-bar { padding:4px 10px; font-size:11px; text-align:center; }
+  .status-bar.ok { background:#e8f5e9; color:var(--primary); }
+  .status-bar.warn { background:#fff3e0; color:#e65100; }
+  .status-bar.error { background:#ffebee; color:var(--danger); }
+  .typing { display:flex; gap:4px; padding:10px 14px; align-items:center; }
+  .typing span { width:7px; height:7px; border-radius:50%; background:#aaa; animation:bounce 1.4s infinite; }
+  .typing span:nth-child(2) { animation-delay:.2s; }
+  .typing span:nth-child(3) { animation-delay:.4s; }
+  @keyframes bounce { 0%,80%,100% { transform:scale(0.6); } 40% { transform:scale(1); } }
+  @keyframes fadein { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="avatar">苏</div>
+  <div><div class="name">苏姐 · AI销冠顾问</div><div class="sub">松鼠管家高端家政 · 在线</div></div>
+  <div class="right">
+    <button class="btn" id="kbBadge" onclick="toggleSettings()" style="display:none">📘知识库</button>
+    <button class="btn" id="modeBadge" onclick="toggleSettings()">⚙设置</button>
+  </div>
+</div>
+
+<div class="msgs" id="messages"></div>
+
+<div id="statusArea"></div>
+
+<div class="quick-section" id="quickBtns"></div>
+
+<div class="input-section">
+  <input type="text" id="userInput" placeholder="输入消息..." onkeydown="if(event.key==='Enter')send()">
+  <button onclick="send()">发送</button>
+</div>
+
+<div class="overlay" id="settingsOverlay">
+  <div class="panel">
+    <h3>⚙ 设置</h3>
+    <div id="statusBox" style="margin-bottom:10px"></div>
+    <label>API密钥</label>
+    <input type="password" id="apiKey" placeholder="sk-... DeepSeek API密钥">
+    <label>API地址</label>
+    <input type="text" id="apiBase" placeholder="https://api.deepseek.com" value="https://api.deepseek.com">
+    <label>模型名称</label>
+    <input type="text" id="model" placeholder="deepseek-chat" value="deepseek-chat">
+    <label>📘 知识库（粘贴公司资料，AI会自动参考）</label>
+    <textarea id="kbText" placeholder="粘贴公司介绍、服务内容、价格表、FAQ...&#10;例如：&#10;松鼠管家成立于2020年，主打...&#10;服务项目：日常保洁198元起..."></textarea>
+    <div class="btn-row">
+      <button class="btn-save" onclick="saveAll()">💾 保存设置</button>
+      <button class="btn-close" onclick="toggleSettings()">关闭</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==================== STATE ====================
+const state = {
+  apiKey: '',
+  apiBase: 'https://api.deepseek.com',
+  model: 'deepseek-chat',
+  knowledge: '',
+  conversation: []
+};
+
+// Load saved
+try {
+  const s = JSON.parse(localStorage.getItem('songshu_v5_settings'));
+  if (s) Object.assign(state, s);
+} catch(e) {}
+
+// ==================== SYSTEM PROMPT ====================
+function buildSystemPrompt() {
+  let kb = '';
+  if (state.knowledge.trim()) {
+    kb = `\n\n[公司专属知识库——以下内容必须严格参考，优先于你的内置知识]\n${state.knowledge}`;
+  }
+  return `你是"苏姐"，苏州松鼠管家高端家政的金牌顾问，8年经验，服务过苏州1000+高端家庭。你说话温暖亲切，像邻家姐姐，但聊起专业很自信。
+
+核心风格：
+- 说话自然口语化，带一点苏州女人的柔和。"姐""您"自然称呼客户。
+- 绝不直接报价。先问面积、人口、痛点，再给方案。
+- 遇到说贵的，先理解再拆解价值："姐我理解，不过咱们这个和外面30块的不一样..."
+- 问到安全问题，必须说清楚：员工制、背调、保险、监控、损坏赔付。
+- 客户犹豫时讲真实案例（苏州本地高端小区）。
+- 聊得好了自然引导加微信："加我微信把方案发您~"
+- 服务参考价：日常保洁198起（4h），深度保洁698，除螨198，家电清洗198起，甲醛治理25元/平起，月嫂12800起。
+- 如果客户要求转人工或情绪激动，末尾加 [TRANSFER_HUMAN]。
+- 如果客户想预约/问付款/问时间等强意向，末尾加 [HIGH_INTENT]。
+- 不要用markdown格式，纯文字回复。每次回复控制在200字以内。${kb}`;
+}
+
+// ==================== UI ====================
+function $(id) { return document.getElementById(id); }
+
+function addMsg(role, text, tag) {
+  const div = document.createElement('div');
+  div.className = 'msg ' + role;
+  let extra = '';
+  if (tag === 'intent') extra = '<span class="tag intent">高意向</span>';
+  if (tag === 'transfer') extra = '<span class="tag transfer">待转人工</span>';
+  let label = role === 'ai' ? '苏姐' : '您';
+  div.innerHTML = `<div class="meta">${label}${extra}</div>${escapeHtml(text)}`;
+  $('messages').appendChild(div);
+  $('messages').scrollTop = $('messages').scrollHeight;
+}
+
+function escapeHtml(t) {
+  const d = document.createElement('div');
+  d.textContent = t;
+  return d.innerHTML;
+}
+
+function showTyping() {
+  const div = document.createElement('div');
+  div.className = 'typing';
+  div.id = 'typing';
+  div.innerHTML = '<span></span><span></span><span></span>';
+  $('messages').appendChild(div);
+  $('messages').scrollTop = $('messages').scrollHeight;
+}
+
+function hideTyping() {
+  const t = $('typing');
+  if (t) t.remove();
+}
+
+function setStatus(type, text) {
+  $('statusArea').className = 'status-bar ' + type;
+  $('statusArea').textContent = text;
+}
+
+// ==================== API CALL ====================
+async function callLLM(userMsg) {
+  const messages = [
+    { role: 'system', content: buildSystemPrompt() },
+    ...state.conversation,
+    { role: 'user', content: userMsg }
+  ];
+
+  // Try direct first (some deployments allow it)
+  const url = state.apiBase.replace(/\/$/, '') + '/chat/completions';
+  
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + state.apiKey
+      },
+      body: JSON.stringify({
+        model: state.model,
+        messages: messages,
+        max_tokens: 800,
+        temperature: 0.75,
+        presence_penalty: 0.1,
+        frequency_penalty: 0.1
+      })
+    });
+
+    if (!resp.ok) {
+      const errText = await resp.text();
+      throw new Error('API返回 ' + resp.status + ': ' + errText.substring(0, 200));
+    }
+
+    const data = await resp.json();
+    const reply = data.choices[0].message.content;
+    return reply;
+
+  } catch (err) {
+    // If CORS or network error, try proxy
+    if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError') || err.name === 'TypeError') {
+      // Try 3 public CORS proxies
+      const proxies = [
+        'https://api.codetabs.com/v1/proxy?quest=',
+        'https://cors.eu.org/'
+      ];
+      
+      for (const proxy of proxies) {
+        try {
+          const proxyResp = await fetch(proxy + encodeURIComponent(url), {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + state.apiKey
+            },
+            body: JSON.stringify({
+              model: state.model,
+              messages: messages,
+              max_tokens: 800,
+              temperature: 0.75
+            })
+          });
+          
+          if (proxyResp.ok) {
+            const pdata = await proxyResp.json();
+            return pdata.choices[0].message.content;
+          }
+        } catch(e) {
+          continue;
+        }
+      }
+      
+      throw new Error('网络错误：浏览器无法直接调用大模型API（CORS限制）。请到本地打开 http://localhost:3099 使用代理版。');
+    }
+    throw err;
+  }
+}
+
+// ==================== SEND ====================
+async function send() {
+  const input = $('userInput');
+  const text = input.value.trim();
+  if (!text) return;
+  
+  if (!state.apiKey) {
+    setStatus('warn', '请先点⚙设置填入API密钥');
+    return;
+  }
+
+  input.value = '';
+  addMsg('user', text);
+  showTyping();
+  setStatus('', '');
+
+  try {
+    const reply = await callLLM(text);
+    hideTyping();
+
+    // Detect tags
+    let tag = null;
+    let cleanReply = reply;
+    if (reply.includes('[HIGH_INTENT]')) { tag = 'intent'; cleanReply = reply.replace('[HIGH_INTENT]', ''); }
+    if (reply.includes('[TRANSFER_HUMAN]')) { tag = 'transfer'; cleanReply = reply.replace('[TRANSFER_HUMAN]', ''); }
+
+    addMsg('ai', cleanReply.trim(), tag);
+    
+    // Update conversation history
+    state.conversation.push({ role: 'user', content: text });
+    state.conversation.push({ role: 'assistant', content: cleanReply.trim() });
+    if (state.conversation.length > 20) state.conversation = state.conversation.slice(-20);
+
+  } catch(err) {
+    hideTyping();
+    setStatus('error', '错误: ' + err.message);
+    addMsg('ai', '抱歉姐，出了点问题：' + err.message + '\n\n如果提示网络错误，请确保在本地代理版(http://localhost:3099)打开，或检查API密钥。');
+  }
+}
+
+// ==================== SETTINGS ====================
+function toggleSettings() {
+  const overlay = $('settingsOverlay');
+  overlay.classList.toggle('show');
+  if (overlay.classList.contains('show')) {
+    $('apiKey').value = state.apiKey;
+    $('apiBase').value = state.apiBase;
+    $('model').value = state.model;
+    $('kbText').value = state.knowledge;
+    updateStatusBox();
+  }
+}
+
+function updateStatusBox() {
+  const box = $('statusBox');
+  if (state.apiKey) {
+    box.innerHTML = '<div style="color:#2e7d32;font-size:12px">✅ API已配置 | 模型: ' + state.model + ' | 知识库: ' + (state.knowledge ? state.knowledge.length + '字' : '未加载') + '</div>';
+  } else {
+    box.innerHTML = '<div style="color:#e65100;font-size:12px">⚠️ 请填入DeepSeek API密钥<br>注册地址: platform.deepseek.com</div>';
+  }
+}
+
+function saveAll() {
+  state.apiKey = $('apiKey').value.trim();
+  state.apiBase = $('apiBase').value.trim() || 'https://api.deepseek.com';
+  state.model = $('model').value.trim() || 'deepseek-chat';
+  state.knowledge = $('kbText').value.trim();
+
+  try {
+    localStorage.setItem('songshu_v5_settings', JSON.stringify({
+      apiKey: state.apiKey, apiBase: state.apiBase, model: state.model, knowledge: state.knowledge
+    }));
+  } catch(e) {}
+
+  // Update UI
+  $('kbBadge').style.display = state.knowledge ? 'inline-block' : 'none';
+  if (state.knowledge) $('kbBadge').textContent = '📘知识库 ' + state.knowledge.length + '字';
+
+  updateStatusBox();
+  $('settingsOverlay').classList.remove('show');
+
+  if (state.apiKey) {
+    state.conversation = [];
+    $('messages').innerHTML = '';
+    addMsg('ai', '苏姐上线啦！我是松鼠管家顾问，有什么可以帮您的～');
+    setStatus('ok', 'Live模式 · 知识库: ' + (state.knowledge ? state.knowledge.length + '字' : '未加载'));
+  } else {
+    setStatus('warn', '请填入API密钥后使用');
+  }
+}
+
+// ==================== QUICK BUTTONS ====================
+const quickBtns = [
+  { text: '我想咨询保洁', q: '你好，我想咨询一下保洁服务' },
+  { text: '多少钱', q: '你们保洁怎么收费的？' },
+  { text: '阿姨靠谱吗', q: '你们阿姨靠谱吗？安全有保障吗？' },
+  { text: '我家有宝宝', q: '我家有宝宝，对卫生要求很高' },
+  { text: '苏州园区', q: '我在苏州园区，想了解下服务' },
+];
+quickBtns.forEach(b => {
+  const btn = document.createElement('button');
+  btn.className = 'quick-btn';
+  btn.textContent = b.text;
+  btn.onclick = () => { $('userInput').value = b.q; send(); };
+  $('quickBtns').appendChild(btn);
+});
+
+// ==================== INIT ====================
+function init() {
+  if (state.apiKey) {
+    addMsg('ai', '苏姐上线啦！我是松鼠管家顾问，有什么可以帮您的～');
+    setStatus('ok', 'Live就绪 · 知识库: ' + (state.knowledge ? state.knowledge.length + '字' : '未加载'));
+    $('kbBadge').style.display = state.knowledge ? 'inline-block' : 'none';
+    if (state.knowledge) $('kbBadge').textContent = '📘知识库 ' + state.knowledge.length + '字';
+  } else {
+    addMsg('ai', '您好，我是松鼠管家顾问苏姐～请先点击右上角⚙设置，填入DeepSeek API密钥后，我就能帮您解答啦！');
+    setStatus('warn', '请点⚙设置填入API密钥');
+  }
+}
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>松鼠管家 · AI销冠苏姐</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:#F5F5F5;display:flex;justify-content:center;align-items:center;min-height:100vh}
+.cc{width:100%;max-width:420px;height:100vh;max-height:850px;display:flex;flex-direction:column;background:#EDEDED;overflow:hidden}
+.hd{background:linear-gradient(135deg,#07C160,#06AD56);color:#fff;padding:12px 16px;display:flex;align-items:center;gap:12px;z-index:10;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.hd .av{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:bold;flex-shrink:0}
+.hd .info{flex:1}.hd .info .n{font-size:16px;font-weight:600}.hd .info .s{font-size:12px;opacity:.85;margin-top:2px}
+.hd .badge{background:rgba(255,255,255,.2);padding:3px 10px;border-radius:10px;font-size:11px;margin-left:8px}
+.hd .badge.live{background:#FFD700;color:#333}
+.hd .badge.kb{background:rgba(59,130,246,.6);color:#fff;padding:3px 8px;border-radius:10px;font-size:10px;margin-left:4px}
+.hd button{background:none;border:none;color:#fff;font-size:22px;cursor:pointer;padding:4px 8px;line-height:1}
+.msgs{flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:12px}
+.row{display:flex;align-items:flex-start;gap:8px;max-width:85%}
+.row.ai{align-self:flex-start}.row.usr{align-self:flex-end;flex-direction:row-reverse}
+.row .ava{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:bold;flex-shrink:0}
+.row.ai .ava{background:#07C160;color:#fff}.row.usr .ava{background:#576B95;color:#fff}
+.bub{position:relative;padding:10px 14px;border-radius:8px;font-size:14px;line-height:1.7;word-break:break-word;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+.row.ai .bub{background:#fff;color:#333;border-top-left-radius:2px}
+.row.usr .bub{background:#95EC69;color:#000;border-top-right-radius:2px}
+.qr{display:flex;gap:8px;padding:8px 16px;overflow-x:auto;scrollbar-width:none;flex-shrink:0;background:#EDEDED;flex-wrap:wrap}
+.qr::-webkit-scrollbar{display:none}
+.qbtn{white-space:nowrap;padding:8px 16px;border-radius:20px;border:1px solid #07C160;background:#fff;color:#07C160;font-size:13px;cursor:pointer;transition:all .2s;flex-shrink:0}
+.qbtn:active{background:#07C160;color:#fff}
+.inp{display:flex;gap:8px;padding:10px 16px;background:#F7F7F7;border-top:1px solid #E0E0E0;align-items:center}
+.inp input{flex:1;padding:10px 14px;border:1px solid #DDD;border-radius:6px;font-size:14px;outline:none;background:#fff}
+.inp input:focus{border-color:#07C160}
+.inp .snd{background:#07C160;color:#fff;border:none;padding:10px 18px;border-radius:6px;font-size:14px;cursor:pointer;font-weight:500;white-space:nowrap}
+.inp .snd:disabled{opacity:.5}
+.typing{display:flex;align-items:flex-start;gap:8px;padding:0 16px 8px}
+.typing .tb{background:#fff;padding:12px 16px;border-radius:8px;display:flex;gap:4px;align-items:center}
+.typing .tb span{width:7px;height:7px;background:#BFBFBF;border-radius:50%;animation:ty 1.4s infinite}
+.typing .tb span:nth-child(2){animation-delay:.2s}.typing .tb span:nth-child(3){animation-delay:.4s}
+@keyframes ty{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
+/* Overlay */
+.ov{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:50;display:none;justify-content:center;align-items:center}
+.ov.show{display:flex}
+.pnl{background:#fff;border-radius:12px;padding:20px;width:90%;max-width:400px;max-height:85vh;overflow-y:auto}
+.pnl h3{font-size:17px;margin-bottom:6px;color:#333}
+.pnl .sec-title{font-size:13px;color:#07C160;margin:16px 0 6px;border-top:1px solid #EEE;padding-top:12px;font-weight:600}
+.pnl label{display:block;font-size:12px;color:#666;margin:8px 0 3px}
+.pnl input,.pnl textarea{width:100%;padding:8px 10px;border:1px solid #DDD;border-radius:6px;font-size:13px;outline:none}
+.pnl textarea{font-family:monospace;font-size:12px;resize:vertical}
+.pnl .btr{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.pnl button{padding:8px 14px;border-radius:6px;font-size:13px;cursor:pointer;border:none;font-weight:500}
+.pnl .bs{background:#07C160;color:#fff;flex:1}
+.pnl .bd{background:#F0F0F0;color:#333;flex:1}
+.pnl .bsm{font-size:11px;padding:6px 10px;flex:0 0 auto}
+.st{font-size:11px;margin-top:8px;padding:6px 10px;border-radius:4px;line-height:1.5}
+.sok{background:#E8F5E9;color:#2E7D32}.sw{background:#FFF3E0;color:#E65100}.se{background:#FFEBEE;color:#C62828}
+.tip{font-size:11px;color:#999;margin-top:4px}
+</style>
+</head>
+<body>
+<div class="cc">
+  <div class="hd">
+    <div class="av">苏</div>
+    <div class="info"><div class="n">苏姐<span class="badge" id="badge">离线</span><span class="badge kb" id="kbbadge" style="display:none">知识库</span></div><div class="s">松鼠管家 · 金牌顾问</div></div>
+    <button onclick="tog()" title="设置">&#9881;</button>
+  </div>
+  <div class="msgs" id="msgs"></div>
+  <div class="qr" id="qr" style="display:none"></div>
+  <div id="ty"></div>
+  <div class="inp">
+    <input type="text" id="inp" placeholder="输入消息..." autocomplete="off" onkeydown="if(event.key==='Enter')snd()">
+    <button class="snd" id="sndbtn" onclick="snd()">发送</button>
+  </div>
+</div>
+
+<!-- Settings Overlay -->
+<div class="ov" id="ov">
+  <div class="pnl">
+    <h3>&#9881; 设置</h3>
+    <div id="st"></div>
+
+    <div class="sec-title">API配置</div>
+    <label>DeepSeek API密钥</label>
+    <input type="password" id="apikey" placeholder="sk-..." autocomplete="off">
+    <div class="tip">密钥存在浏览器本地，不会上传到任何地方（除了发给DeepSeek）</div>
+
+    <div class="sec-title" style="color:#3B82F6">&#128218; 知识库（公司资料）</div>
+    <label>粘贴公司介绍、服务标准、FAQ等资料（越详细越好）</label>
+    <textarea id="kb" placeholder="例如：
+松鼠管家成立于2018年，总部位于苏州工业园区...
+核心服务：日常保洁198元/4小时、深度保洁698元...
+服务区域：园区、新区、姑苏、吴中、相城、吴江
+员工情况：200+名员工制阿姨，全部经过三重背调...
+合作案例：玲珑湾王姐、御园李总...
+公司优势：自有培训基地、德国进口设备、母婴安全级试剂...
+联系电话：400-xxx-xxxx
+公司地址：苏州工业园区xxx路xxx号" style="height:150px"></textarea>
+    <div class="tip" id="kbtip" style="margin-top:4px">已加载 0 字 | 知识库内容会追加到AI的"记忆"中</div>
+
+    <label>自定义提示词（可选，覆盖默认风格）</label>
+    <textarea id="pe" style="height:100px"></textarea>
+
+    <div class="btr">
+      <button class="bs" onclick="sv()">保存所有设置</button>
+    </div>
+    <div class="btr">
+      <button class="bd bsm" onclick="rskb()">清空知识库</button>
+      <button class="bd bsm" onclick="rsp()">恢复默认提示词</button>
+    </div>
+
+    <div class="sec-title" style="color:#999">关于微信分享</div>
+    <div style="font-size:11px;color:#999;line-height:1.6">
+      当前为本地版（localhost:3099），仅本机可访问。<br>
+      如需微信发送给朋友测试，需要部署到公网服务器。<br>
+      建议：先在本地测试满意后，部署到阿里云/腾讯云。
+    </div>
+  </div>
+</div>
+
+<script>
+// ============== SYSTEM PROMPT ==============
+const PROMPT_DEFAULT = `你是苏姐，苏州高端家政品牌"松鼠管家"的金牌顾问，干了8年，服务过园区玲珑湾、御园等高端小区上千户家庭。你说话像邻家姐姐，亲切自然，用口语，像发微信一样。不用列表不用标题不用格式。
+
+默认服务价格（如果知识库里没有另外说明就用这个）：日常保洁198元/4小时，深度保洁698元(全屋)，除螨198元/次，厨房+除螨组合套餐898元送沙发养护(比单买省300)，家电清洗198元起，甲醛治理25元/平起，开荒保洁8元/平，月嫂12800元起/26天。
+
+安全保障：阿姨三重背调+家政险+服务全程可监看+损坏先赔付，8年零事故。
+
+苏州各区：园区(玲珑湾/御园/湖滨四季)、新区(狮山)、姑苏(老城区别墅)、吴中、相城、吴江。
+
+说话规则：先问区域/面积/家庭情况再推荐，不直接报价。每句话60-100字。称呼客户"姐"。被问价格就用价值说服(我们用的进口分区毛巾/德国设备/140度高温蒸洗)。被问安全就说四重锁。客户想预约或问付款时回答末尾加[HIGH_INTENT]。客户发怒或要求转人工时末尾加[TRANSFER_HUMAN]。聊到差不多时主动邀加微信。`;
+
+// ============== STATE ==============
+let D = {
+  key: '',
+  live: false,
+  conv: [],
+  pending: false,
+  knowledgeBase: '',
+  customPrompt: ''
+};
+
+// ============== INIT ==============
+(function init() {
+  try {
+    let s = localStorage.getItem('ss4_key'); if (s) D.key = s;
+    let p = localStorage.getItem('ss4_prompt'); if (p) D.customPrompt = p;
+    let k = localStorage.getItem('ss4_kb'); if (k) D.knowledgeBase = k;
+  } catch(e) {}
+
+  if (D.key) {
+    startLive();
+  } else {
+    am('ai', '你好～我是松鼠管家顾问苏姐。还没设置API密钥呢。点右上角⚙按钮，填入DeepSeek密钥就能正常聊天了～');
+    sqr(['怎么获取密钥', '先看看Demo']);
+  }
+  ub();
+  ukb();
+})();
+
+function getSystemPrompt() {
+  return D.customPrompt || PROMPT_DEFAULT;
+}
+
+// ============== BADGE ==============
+function ub() {
+  let b = document.getElementById('badge');
+  if (D.live) { b.textContent = '在线'; b.className = 'badge live'; }
+  else { b.textContent = '离线'; b.className = 'badge'; }
+}
+function ukb() {
+  let b = document.getElementById('kbbadge');
+  if (D.knowledgeBase.trim()) { b.style.display = 'inline-block'; b.textContent = '知识库 ' + Math.min(D.knowledgeBase.length, 999) + '字'; }
+  else { b.style.display = 'none'; }
+}
+
+// ============== UI ==============
+function tn() { return new Date().toLocaleTimeString('zh-CN', {hour:'2-digit',minute:'2-digit'}); }
+
+function am(role, txt) {
+  let m = document.getElementById('msgs');
+  let d = document.createElement('div');
+  d.className = 'row ' + (role === 'user' ? 'usr' : 'ai');
+  let a = document.createElement('div'); a.className = 'ava'; a.textContent = role === 'user' ? '我' : '苏';
+  let b = document.createElement('div'); b.className = 'bub';
+  b.innerHTML = txt.replace(/\n/g, '<br>') + '<div class="tm">' + tn() + '</div>';
+  d.appendChild(a); d.appendChild(b); m.appendChild(d);
+  m.scrollTop = m.scrollHeight;
+}
+
+function showTyping() {
+  document.getElementById('ty').innerHTML = '<div class="typing"><div class="ava" style="width:36px;height:36px;border-radius:50%;background:#07C160;color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:bold">苏</div><div class="tb"><span></span><span></span><span></span></div></div>';
+  document.getElementById('msgs').scrollTop = document.getElementById('msgs').scrollHeight;
+}
+function hideTyping() { document.getElementById('ty').innerHTML = ''; }
+
+function sqr(opts) {
+  let c = document.getElementById('qr');
+  c.innerHTML = opts.map(o => '<button class="qbtn" onclick="qrClick(\'' + o.replace(/'/g,'\\\'') + '\')">' + o + '</button>').join('');
+  c.style.display = 'flex';
+}
+function hideQr() { document.getElementById('qr').style.display = 'none'; }
+function qrClick(t) { document.getElementById('inp').value = t; snd(); }
+
+// ============== SEND ==============
+function snd() {
+  if (D.pending) return;
+  let i = document.getElementById('inp'); let t = i.value.trim(); if (!t) return;
+  i.value = ''; hideQr();
+  am('user', t);
+  D.conv.push({ role: 'user', content: t });
+
+  if (!D.live) {
+    let r = demoReply(t);
+    D.conv.push({ role: 'assistant', content: r });
+    am('ai', r.replace(/\[HIGH_INTENT\]/g,'').replace(/\[TRANSFER_HUMAN\]/g,'').trim());
+    afterReply(r);
+    return;
+  }
+
+  D.pending = true;
+  document.getElementById('sndbtn').disabled = true;
+  showTyping();
+
+  callAI().then(r => {
+    D.pending = false;
+    document.getElementById('sndbtn').disabled = false;
+    hideTyping();
+    D.conv.push({ role: 'assistant', content: r });
+    am('ai', r.replace(/\[HIGH_INTENT\]/g,'').replace(/\[TRANSFER_HUMAN\]/g,'').trim() || '(空回复)');
+    afterReply(r);
+  }).catch(e => {
+    D.pending = false;
+    document.getElementById('sndbtn').disabled = false;
+    hideTyping();
+    console.error('API error:', e);
+    am('ai', '出了点问题：' + e.message + '\n\n检查下密钥或网络，点右上角⚙重新设置。');
+  });
+}
+
+function afterReply(r) {
+  if (r.includes('[TRANSFER_HUMAN]')) {
+    setTimeout(() => am('ai', '【系统】已通知真人顾问接入，请稍候～'), 1500);
+  } else if (r.includes('[HIGH_INTENT]')) {
+    sqr(['好的 怎么付款', '先加微信看看', '再了解下其他服务']);
+  }
+}
+
+// ============== DEMO FALLBACK ==============
+function demoReply(t) {
+  if (/转人工|投诉|找.*领导/.test(t)) return '好的姐，马上帮您转接真人顾问～\n[TRANSFER_HUMAN]';
+  if (/密钥|怎么获取|注册/.test(t)) return '去 platform.deepseek.com 注册（手机号就行），然后在API Keys页面创建一个Key，复制过来填到设置里就行～新用户送500万token，够聊几千轮。';
+  if (/太贵|便宜|优惠|价格/.test(t)) return '姐我特别理解，谁的钱也不是大风刮来的。不过说实话——外面30块的阿姨很多一块抹布擦到底，刚擦完马桶擦餐桌。我们阿姨自带四色分区毛巾，厨房卫生间各用各的，198元4小时划下来一次不到150块，但您得到的是星级酒店标准的家。要不先试一次？';
+  if (/安全|可靠|放心|偷|保险/.test(t)) return '完全理解姐。我们四重安全保障：三重背调+家政险+全程监看+先行赔付，8年零事故。第一次您视频远程看着就行，一点问题没有。';
+  if (/不错|可以|行|试试|订|预约|周六|周日/.test(t)) return '太好了姐！帮您把名额锁上。给我地址和电话，服务前一天阿姨联系您确认时间～加我微信，我把服务视频和优惠券发给您。\n[HIGH_INTENT]';
+  if (/考虑|再说|不需要|等等/.test(t)) return '好的姐，买东西是该多比较。您主要对比哪方面？是细度还是价格？说出来帮您参谋参谋～上个月玲珑湾有个姐一开始也担心，试了一次直接包了半年。';
+  if (/怎么|什么|哪些|有/.test(t)) return '姐，我们服务挺全的。日常保洁198元、深度保洁698元、除螨198元、家电清洗198元起、收纳整理、甲醛治理、月嫂12800元起都有。您家大概在苏州哪个区呀，多大面积？我帮您推荐最合适的。';
+  return '姐您好呀～看到您在了解高端保洁。咱家在苏州哪个区呀，大概多大面积呢？我帮您看看最适合的方案～';
+}
+
+// ============== LIVE API (through local proxy) ==============
+async function callAI() {
+  let msgs = [{ role: 'system', content: getSystemPrompt() }];
+  let recent = D.conv.slice(-10);
+  for (let m of recent) msgs.push(m);
+
+  let resp = await fetch('/api/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      endpoint: 'https://api.deepseek.com/v1',
+      apiKey: D.key,
+      model: 'deepseek-chat',
+      messages: msgs,
+      temperature: 0.7,
+      knowledgeBase: D.knowledgeBase  // ← 知识库注入
+    })
+  });
+
+  if (!resp.ok) {
+    let d = await resp.json().catch(() => ({}));
+    throw new Error(d.error || 'API请求失败 ' + resp.status);
+  }
+
+  let d = await resp.json();
+  return d.content || '';
+}
+
+// ============== SETTINGS ==============
+function tog() {
+  let o = document.getElementById('ov');
+  o.classList.toggle('show');
+  if (o.classList.contains('show')) {
+    document.getElementById('apikey').value = D.key || '';
+    document.getElementById('pe').value = getSystemPrompt();
+    document.getElementById('kb').value = D.knowledgeBase || '';
+    updateKbTip();
+    ust();
+  }
+}
+
+function updateKbTip() {
+  let kb = document.getElementById('kb').value;
+  document.getElementById('kbtip').textContent = '已加载 ' + kb.length + ' 字 | 知识库内容会追加到AI的"记忆"中';
+}
+
+function ust() {
+  let d = document.getElementById('st');
+  if (D.live) {
+    d.className = 'st sok';
+    d.textContent = '状态：已连接（本地代理 → DeepSeek）';
+  } else {
+    d.className = 'st sw';
+    d.textContent = '状态：离线 | 填入API密钥后保存即可启动';
+  }
+}
+
+function sv() {
+  let k = document.getElementById('apikey').value.trim();
+  if (!k) { document.getElementById('st').innerHTML = '<div class="se">请输入API密钥</div>'; return; }
+
+  D.key = k;
+  localStorage.setItem('ss4_key', k);
+
+  let p = document.getElementById('pe').value.trim();
+  D.customPrompt = p && p !== PROMPT_DEFAULT ? p : '';
+  if (D.customPrompt) localStorage.setItem('ss4_prompt', D.customPrompt);
+  else localStorage.removeItem('ss4_prompt');
+
+  let kb = document.getElementById('kb').value.trim();
+  D.knowledgeBase = kb;
+  if (kb) localStorage.setItem('ss4_kb', kb);
+  else localStorage.removeItem('ss4_kb');
+
+  ukb();
+  startLive();
+  document.getElementById('ov').classList.remove('show');
+  D.conv = [];
+  document.getElementById('msgs').innerHTML = '';
+  let kbMsg = D.knowledgeBase ? '（已加载知识库 ' + D.knowledgeBase.length + ' 字）' : '';
+  am('ai', '苏姐来啦！现在是真的AI在跟你聊天了～' + kbMsg + ' 姐想问什么尽管说！');
+}
+
+function startLive() { D.live = true; ub(); ust(); }
+
+function rsp() { D.customPrompt = ''; localStorage.removeItem('ss4_prompt'); document.getElementById('pe').value = PROMPT_DEFAULT; }
+
+function rskb() { D.knowledgeBase = ''; localStorage.removeItem('ss4_kb'); document.getElementById('kb').value = ''; updateKbTip(); ukb(); }
+
+// KB textarea auto-save on change
+document.addEventListener('DOMContentLoaded', function() {
+  let kbArea = document.getElementById('kb');
+  if (kbArea) kbArea.addEventListener('input', updateKbTip);
+});
+</script>
+</body>
+</html>

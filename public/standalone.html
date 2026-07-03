@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>松鼠管家 · AI销冠苏姐</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:#EDEDED;display:flex;justify-content:center;align-items:center;min-height:100vh}
+.cc{width:100%;max-width:420px;height:100vh;max-height:850px;display:flex;flex-direction:column;overflow:hidden}
+.hd{background:linear-gradient(135deg,#07C160,#06AD56);color:#fff;padding:12px 16px;display:flex;align-items:center;gap:12px;z-index:10;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.hd .av{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:bold;flex-shrink:0}
+.hd .info{flex:1}.hd .info .n{font-size:16px;font-weight:600}.hd .info .s{font-size:12px;opacity:.85;margin-top:2px}
+.hd .badge{background:rgba(255,255,255,.2);padding:3px 10px;border-radius:10px;font-size:11px;margin-left:6px}
+.hd .badge.live{background:#FFD700;color:#333}
+.hd .badge.kb{background:rgba(59,130,246,.6);color:#fff;padding:3px 8px;border-radius:10px;font-size:10px;margin-left:4px}
+.hd button{background:none;border:none;color:#fff;font-size:22px;cursor:pointer;padding:4px 8px;line-height:1}
+.msgs{flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:12px;background:#EDEDED}
+.row{display:flex;align-items:flex-start;gap:8px;max-width:85%}
+.row.ai{align-self:flex-start}.row.usr{align-self:flex-end;flex-direction:row-reverse}
+.row .ava{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:bold;flex-shrink:0}
+.row.ai .ava{background:#07C160;color:#fff}.row.usr .ava{background:#576B95;color:#fff}
+.bub{position:relative;padding:10px 14px;border-radius:8px;font-size:14px;line-height:1.7;word-break:break-word;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+.row.ai .bub{background:#fff;color:#333;border-top-left-radius:2px}
+.row.usr .bub{background:#95EC69;color:#000;border-top-right-radius:2px}
+.qr{display:flex;gap:8px;padding:8px 16px;overflow-x:auto;scrollbar-width:none;flex-shrink:0;background:#EDEDED;flex-wrap:wrap}
+.qr::-webkit-scrollbar{display:none}
+.qbtn{white-space:nowrap;padding:8px 16px;border-radius:20px;border:1px solid #07C160;background:#fff;color:#07C160;font-size:13px;cursor:pointer}
+.qbtn:active{background:#07C160;color:#fff}
+.inp{display:flex;gap:8px;padding:10px 16px;background:#F7F7F7;border-top:1px solid #E0E0E0;align-items:center}
+.inp input{flex:1;padding:10px 14px;border:1px solid #DDD;border-radius:6px;font-size:14px;outline:none;background:#fff}
+.inp input:focus{border-color:#07C160}
+.inp .snd{background:#07C160;color:#fff;border:none;padding:10px 18px;border-radius:6px;font-size:14px;cursor:pointer;font-weight:500;white-space:nowrap}
+.ov{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:50;display:none;justify-content:center;align-items:center}
+.ov.show{display:flex}
+.pnl{background:#fff;border-radius:12px;padding:20px;width:90%;max-width:400px;max-height:85vh;overflow-y:auto}
+.pnl h3{font-size:17px;margin-bottom:6px;color:#333}
+.pnl .st{font-size:13px;color:#07C160;margin:14px 0 6px;border-top:1px solid #EEE;padding-top:12px;font-weight:600}
+.pnl label{display:block;font-size:12px;color:#666;margin:8px 0 3px}
+.pnl input,.pnl textarea{width:100%;padding:8px 10px;border:1px solid #DDD;border-radius:6px;font-size:13px;outline:none}
+.pnl textarea{font-family:monospace;font-size:12px;resize:vertical}
+.pnl .btr{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.pnl button{padding:8px 14px;border-radius:6px;font-size:13px;cursor:pointer;border:none;font-weight:500}
+.pnl .bs{background:#07C160;color:#fff;flex:1}
+.pnl .bd{background:#F0F0F0;color:#333;flex:1}
+.pnl .bsm{font-size:11px;padding:6px 10px;flex:0 0 auto}
+.stp{padding:6px 10px;border-radius:4px;font-size:11px;line-height:1.5;margin-bottom:4px}
+.sok{background:#E8F5E9;color:#2E7D32}.sw{background:#FFF3E0;color:#E65100}.se{background:#FFEBEE;color:#C62828}
+.tip{font-size:11px;color:#999;margin-top:4px;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="cc">
+  <div class="hd">
+    <div class="av">苏</div>
+    <div class="info"><div class="n">苏姐<span class="badge" id="badge">Demo</span><span class="badge kb" id="kbbadge" style="display:none">知识库</span></div><div class="s">松鼠管家 · 金牌顾问</div></div>
+    <button onclick="tog()">&#9881;</button>
+  </div>
+  <div class="msgs" id="msgs"></div>
+  <div class="qr" id="qr" style="display:none"></div>
+  <div class="inp">
+    <input type="text" id="inp" placeholder="输入消息..." autocomplete="off" onkeydown="if(event.key==='Enter')snd()">
+    <button class="snd" onclick="snd()">发送</button>
+  </div>
+</div>
+
+<div class="ov" id="ov">
+  <div class="pnl">
+    <h3>&#9881; 设置</h3>
+    <div class="stp" id="st"></div>
+
+    <div class="st" style="color:#3B82F6">&#128218; 知识库（粘贴公司资料）</div>
+    <textarea id="kb" placeholder="粘贴松鼠管家的公司介绍、服务标准、FAQ等资料...&#10;&#10;例如：&#10;松鼠管家成立于2018年，苏州工业园区...&#10;核心服务：日常保洁198元/4小时、深度保洁698元..." style="height:150px"></textarea>
+    <div class="tip" id="kbtip">已加载 0 字 · 知识库注入后AI回答会更精准</div>
+
+    <div class="btr">
+      <button class="bs" onclick="sv()">保存知识库</button>
+      <button class="bd bsm" onclick="rskb()">清空</button>
+    </div>
+
+    <div class="st" style="color:#FF6B35">&#128172; 微信分享说明</div>
+    <div class="tip">
+      此页面为Demo模式（内置回复）。<br><br>
+      <b>要体验真正的AI对话（Live模式）：</b><br>
+      请在浏览器打开 <b>http://localhost:3099</b><br>
+      （本地已启动后端服务）<br><br>
+      <b>微信发送给朋友测试：</b><br>
+      需要后端部署到公网服务器<br>
+      （如阿里云轻量68元/月）<br><br>
+      建议：先在localhost测试满意，<br>
+      再部署公网版本给朋友体验。
+    </div>
+  </div>
+</div>
+
+<script>
+const P = `你是苏姐，苏州高端家政品牌"松鼠管家"的金牌顾问，干了8年，服务过园区玲珑湾、御园等高端小区上千户家庭。你说话像邻家姐姐，亲切自然。
+默认价格：日常保洁198元/4小时，深度保洁698元(全屋)，除螨198元/次，厨房+除螨组合898元送沙发养护(省300)，家电清洗198元起，甲醛治理25元/平起，开荒保洁8元/平，月嫂12800元起/26天。
+安全保障：阿姨三重背调+家政险+全程监看+先行赔付，8年零事故。
+规则：先问区域/面积/家庭情况，不直接报价。每句话60-100字。称呼"姐"。`;
+
+let D={kb:'',conv:[]};
+
+(function init(){
+  try{let s=localStorage.getItem('ss6_kb');if(s)D.kb=s;}catch(e){}
+  document.getElementById('kb').value=D.kb;
+  updateKbTip();ukb();
+  am('ai','侬好～我是松鼠管家顾问苏姐。你可以直接跟我聊天，也可以先点⚙把公司资料贴进来，这样我回答更精准～');
+  sqr(['你们有哪些服务','价格多少','阿姨安全吗']);
+})();
+
+function ukb(){let b=document.getElementById('kbbadge');if(D.kb.trim()){b.style.display='inline-block';b.textContent='知识库 '+D.kb.length+'字';}else{b.style.display='none';}}
+function tn(){return new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});}
+
+function am(role,txt){
+  let m=document.getElementById('msgs');
+  let d=document.createElement('div');d.className='row '+(role==='user'?'usr':'ai');
+  let a=document.createElement('div');a.className='ava';a.textContent=role==='user'?'我':'苏';
+  let b=document.createElement('div');b.className='bub';
+  b.innerHTML=txt.replace(/\n/g,'<br>');m.appendChild(d);d.appendChild(a);d.appendChild(b);m.scrollTop=m.scrollHeight;
+}
+
+function sqr(o){let c=document.getElementById('qr');c.innerHTML=o.map(x=>'<button class="qbtn" onclick="qc(\''+x.replace(/'/g,'\\\'')+'\')">'+x+'</button>').join('');c.style.display='flex';}
+function hideQr(){document.getElementById('qr').style.display='none';}
+function qc(t){document.getElementById('inp').value=t;snd();}
+
+function snd(){
+  let i=document.getElementById('inp'),t=i.value.trim();if(!t)return;
+  i.value='';hideQr();am('user',t);
+  let r=reply(t);D.conv.push({role:'assistant',content:r});am('ai',r);
+}
+
+function reply(t){
+  // Simple smart reply based on keywords + knowledge base context
+  let kb=D.kb.trim();
+  if(/转人工|投诉|找.*领导/.test(t))return'好的姐，帮您转真人顾问～';
+  if(/太贵|便宜|优惠|价格/.test(t))return'姐我特别理解。外面30块的阿姨一块抹布擦到底，我们阿姨自带四色分区毛巾，厨房卫生间各用各的，198元4小时一次不到150块，但您得到的是星级酒店标准。要不先试一次？';
+  if(/安全|可靠|放心|偷|保险/.test(t))return'完全理解姐。四重锁：三重背调+家政险+全程监看+先行赔付，8年零事故。第一次视频远程看着就行。';
+  if(/不错|可以|试试|订|预约|周六|周日/.test(t))return'太好了姐！名额锁上。给我地址电话，阿姨联系您确认时间～加微信发优惠券给您。';
+  if(/考虑|再说|等等/.test(t))return'好的姐，买东西多比较正常。您主要对比哪方面？说出来帮您参谋～上个月玲珑湾有个姐试了一次直接包了半年。';
+  if(/wechat|微信|weixin|分享|测试/.test(t))return'目前这是Demo版。想体验真正的AI苏姐，请在浏览器打开 http://localhost:3099（本地版支持Live模式+知识库）。';
+  if(kb && t.length>3){
+    // Simple KB-aware response
+    let keywords=['服务','价格','保洁','清洗','除螨','甲醛','月嫂','收纳','开荒','区域','园区','新区','姑苏','电话','地址','联系','优势','品牌','培训','设备','阿姨','安全'];
+    let matched=[];
+    for(let kw of keywords)if(kb.includes(kw))matched.push(kw);
+    if(matched.length>5){
+      return'姐，根据公司资料，松鼠管家是苏州本地高端家政品牌。服务覆盖园区、新区、姑苏等区域。日常保洁198元起，深度保洁698元，还有除螨、家电清洗、收纳、甲醛治理、月嫂等。阿姨全部员工制，三重背调+保险+监看。您家在哪个区？多大面积？我帮您推荐最合适的。';
+    }
+  }
+  return'姐您好呀～咱家在苏州哪个区呀？多大面积呢？日常保洁198元起、深度保洁698元、除螨198元、家电清洗198元起。您最想了解哪方面？';
+}
+
+function tog(){
+  let o=document.getElementById('ov');o.classList.toggle('show');
+  if(o.classList.contains('show')){
+    document.getElementById('kb').value=D.kb||'';
+    updateKbTip();ust();
+  }
+}
+function ust(){
+  let d=document.getElementById('st');
+  d.className='stp sw';d.textContent='Demo模式 | 本地版 http://localhost:3099 支持Live';
+}
+function updateKbTip(){
+  let v=document.getElementById('kb').value;
+  document.getElementById('kbtip').textContent='已加载 '+v.length+' 字 · 知识库注入后AI回答会更精准';
+}
+function sv(){
+  D.kb=document.getElementById('kb').value.trim();
+  try{localStorage.setItem('ss6_kb',D.kb);}catch(e){}
+  ukb();document.getElementById('ov').classList.remove('show');
+  D.conv=[];document.getElementById('msgs').innerHTML='';
+  if(D.kb)am('ai','知识库已保存（'+D.kb.length+'字）。现在跟我聊天，我会结合公司资料回答～');
+  else am('ai','知识库已清空。侬好～我是松鼠管家顾问苏姐。');
+  sqr(['你们有哪些服务','价格多少','阿姨安全吗']);
+}
+function rskb(){D.kb='';document.getElementById('kb').value='';updateKbTip();ukb();}
+document.addEventListener('DOMContentLoaded',function(){
+  let kb=document.getElementById('kb');if(kb)kb.addEventListener('input',updateKbTip);
+});
+</script>
+</body>
+</html>
